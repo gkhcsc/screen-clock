@@ -1,5 +1,4 @@
 #include "clock.h"
-//≤‚ ‘Õ∆ÀÕ
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow)
 {
 	TCHAR szAppName[] = TEXT("clock");

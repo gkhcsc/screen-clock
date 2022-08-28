@@ -1,6 +1,6 @@
 ## 效果图（开启白色背景）
 
-![效果图](.\效果图.png)
+![](https://github.com/gkhcsc/screen-clock/blob/master/%E6%95%88%E6%9E%9C%E5%9B%BE.png)
 
 ## 设置界面SSS
 

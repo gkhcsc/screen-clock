@@ -1,6 +1,6 @@
 ## 效果图（开启白色背景）
 
-![](C:\Users\gkhcsc\source\repos\时钟2\效果图.png)
+![](.\效果图.png)
 
 ## 设置界面SSS
 

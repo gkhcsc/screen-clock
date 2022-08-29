@@ -37,7 +37,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	static HINSTANCE hInstance = (HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE);
 	switch (msg)
 	{
-		case WM_CREATE:
+		case WM_CREATE:   
 		{
 			InitTray(hInstance, hWnd);
 			RegisterHotKey(hWnd, ID_HOTKEY_HIDEORSHOW, MOD_ALT | MOD_CONTROL,'F');

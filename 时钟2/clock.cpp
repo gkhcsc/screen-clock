@@ -40,7 +40,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case WM_CREATE:
 		{
 			InitTray(hInstance, hWnd);
-			RegisterHotKey(hWnd, ID_HOTKEY_HIDEORSHOW, MOD_ALT | MOD_CONTROL, 'F');
+			RegisterHotKey(hWnd, ID_HOTKEY_HIDEORSHOW, MOD_ALT | MOD_CONTROL,'F');
 
 			hWnd_desktop = FindWindow(NULL, TEXT("FolderView"));
 			SetParent(hWnd_clock, hWnd_desktop);

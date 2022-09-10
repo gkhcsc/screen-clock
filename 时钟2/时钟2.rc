@@ -56,6 +56,7 @@ BEGIN
     BEGIN
         MENUITEM "显示",                          ID_MENU_40001
         MENUITEM "隐藏",                          ID_MENU_40002
+        MENUITEM "闹铃",                          ID_MENU_40005
         MENUITEM "设置",                          ID_MENU_40003
         MENUITEM "退出",                          ID_MENU_40004
     END
@@ -95,6 +96,21 @@ BEGIN
     LTEXT           "快捷键Ctrl+ALT+F 显示或隐藏数字表\n请在删除该程序之前，取消勾选开机自启动选项",IDC_STATIC,10,223,164,17
 END
 
+IDD_DIALOG2 DIALOGEX 0, 0, 192, 97
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "闹钟"
+FONT 10, "Microsoft Sans Serif", 400, 0, 0x0
+BEGIN
+    COMBOBOX        IDC_COMBO1,8,22,35,200,CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "设置时间",IDC_STATIC,8,8,39,9
+    LTEXT           "时",IDC_STATIC,47,24,9,9,NOT WS_GROUP
+    COMBOBOX        IDC_COMBO2,57,21,35,200,CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "分",IDC_STATIC,95,24,9,9,NOT WS_GROUP
+    COMBOBOX        IDC_COMBO3,107,21,37,200,CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "秒",IDC_STATIC,150,24,9,9,NOT WS_GROUP
+    PUSHBUTTON      "确认设置",IDC_BUTTON1,8,41,33,15
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -113,6 +129,15 @@ BEGIN
         HORZGUIDE, 25
         HORZGUIDE, 36
     END
+
+    IDD_DIALOG2, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 166
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 56
+        HORZGUIDE, 33
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
@@ -123,6 +148,11 @@ END
 //
 
 IDD_DIALOG1 AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG2 AFX_DIALOG_LAYOUT
 BEGIN
     0
 END

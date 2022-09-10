@@ -1,4 +1,6 @@
 #include "clock.h"
+int g_index_hours = -1, g_index_min = -1, g_index_sec = -1;
+HANDLE hProcess;
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow)
 {
 	TCHAR szAppName[] = TEXT("clock");
@@ -41,7 +43,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		{
 			InitTray(hInstance, hWnd);
 			RegisterHotKey(hWnd, ID_HOTKEY_HIDEORSHOW, MOD_ALT | MOD_CONTROL,'F');
-
+			RegisterHotKey(hWnd, ID_HOTKEY_CLOSEALARM, MOD_ALT | MOD_CONTROL, 'C');
 			hWnd_desktop = FindWindow(NULL, TEXT("FolderView"));
 			SetParent(hWnd_clock, hWnd_desktop);
 		
@@ -85,22 +87,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 							DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), hWnd_clock, SettingProc);
 							return 0;
 						}
-						case ID_MENU_40004:
+						case ID_MENU_40004: //退出
 						{
-							
+							UnregisterHotKey(hWnd, ID_HOTKEY_CLOSEALARM);
+							UnregisterHotKey(hWnd, ID_HOTKEY_HIDEORSHOW);
+							TerminateProcess(hProcess, 0);
+							KillTimer(0, ID_ALARM);
 							UnregisterHotKey(hWnd, ID_HOTKEY_HIDEORSHOW);
 							Shell_NotifyIcon(NIM_DELETE, &nid);
 							PostQuitMessage(0);
 							return 0;
 						}
-					
-				
+						case ID_MENU_40005:  //闹铃
+						{
+							DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG2), hWnd_clock, AlarmProc);
+							return 0;
+						}
 					}
 				}
-			
 			}
-		
-
 			return 0;
 		}
 		case WM_LBUTTONDOWN: 
@@ -114,9 +119,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			if (lParam == WM_RBUTTONDOWN)//托盘消息中lParam接受鼠标的行为
 			{
 				GetCursorPos(&pt);
-				SetForegroundWindow(hWnd);
-		
 				TrackPopupMenu(hMenu, TPM_LEFTALIGN | TPM_RIGHTBUTTON, pt.x, pt.y, 0, hWnd, NULL);
+				//SetForegroundWindow();
+		
 			}
 			return 0;
 		}
@@ -135,19 +140,28 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		
 		case WM_HOTKEY: 
 		{
-			if (wParam == ID_HOTKEY_HIDEORSHOW)
+			switch (wParam)
 			{
-				if (IsWindowVisible(hWnd_clock))  //如果窗口显示，则隐藏 
+				case ID_HOTKEY_HIDEORSHOW: 
 				{
-					ShowWindow(hWnd_clock, SW_HIDE);
-					CheckMenuItem(hMenu, ID_MENU_40002, MF_CHECKED);
-					CheckMenuItem(hMenu, ID_MENU_40001, MF_UNCHECKED);
+					if (IsWindowVisible(hWnd_clock))  //如果窗口显示，则隐藏 
+					{
+						ShowWindow(hWnd_clock, SW_HIDE);
+						CheckMenuItem(hMenu, ID_MENU_40002, MF_CHECKED);
+						CheckMenuItem(hMenu, ID_MENU_40001, MF_UNCHECKED);
+					}
+					else
+					{
+						ShowWindow(hWnd_clock, SW_SHOW);
+						CheckMenuItem(hMenu, ID_MENU_40001, MF_CHECKED);
+						CheckMenuItem(hMenu, ID_MENU_40002, MF_UNCHECKED);
+					}
+					return 0;
 				}
-				else 
+				case ID_HOTKEY_CLOSEALARM: 
 				{
-					ShowWindow(hWnd_clock, SW_SHOW);
-					CheckMenuItem(hMenu, ID_MENU_40001, MF_CHECKED);
-					CheckMenuItem(hMenu, ID_MENU_40002, MF_UNCHECKED);
+					TerminateProcess(hProcess, 0);
+					return 0;
 				}
 			}
 			return 0;
@@ -160,11 +174,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			TCHAR szBuffer[50];
 			wsprintf(szBuffer, TEXT("%d时%d分%d秒"), CurrentTime->tm_hour, CurrentTime->tm_min, CurrentTime->tm_sec);
 			SetWindowText(hWnd_time, szBuffer);
+
 			return 0;
 
 		}
 		case WM_DESTROY:
 		{
+			UnregisterHotKey(hWnd, ID_HOTKEY_CLOSEALARM);
+			UnregisterHotKey(hWnd, ID_HOTKEY_HIDEORSHOW);
+			TerminateProcess(hProcess, 0);
+			KillTimer(0, ID_ALARM);
 			UnregisterHotKey(hWnd, ID_HOTKEY_HIDEORSHOW);
 			Shell_NotifyIcon(NIM_DELETE, &nid);
 			PostQuitMessage(0);
@@ -305,6 +324,87 @@ BOOL CALLBACK SettingProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return FALSE;
 }
 
+BOOL CALLBACK AlarmProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
+{
+	
+	switch (msg)
+	{
+		case WM_INITDIALOG: 
+		{
+			WCHAR num[3] = {0};
+			for (int i = 1; i < 25; i++)   //因计算时间的函数原因小时不能为0
+			{
+				wsprintf(num, L"%d", i);
+				SendMessage(GetDlgItem(hWnd, IDC_COMBO1), CB_ADDSTRING, (WPARAM)i-1, (LPARAM)num);
+			}
+			for (int i = 0; i < 60; i++)
+			{
+				wsprintf(num, L"%d", i);
+				SendMessage(GetDlgItem(hWnd, IDC_COMBO2), CB_ADDSTRING, (WPARAM)i - 1, (LPARAM)num);
+			}
+			for (int i = 0; i < 60; i++)
+			{
+				wsprintf(num, L"%d", i);
+				SendMessage(GetDlgItem(hWnd, IDC_COMBO3), CB_ADDSTRING, (WPARAM)i - 1, (LPARAM)num);
+			}
+			SendMessage(GetDlgItem(hWnd, IDC_COMBO1), CB_SETCURSEL, (WPARAM)g_index_hours, 0);
+			SendMessage(GetDlgItem(hWnd, IDC_COMBO2), CB_SETCURSEL, (WPARAM)g_index_min, 0);
+			SendMessage(GetDlgItem(hWnd, IDC_COMBO3), CB_SETCURSEL, (WPARAM)g_index_sec, 0);
+			return TRUE;
+		}
+		case WM_TIMER: 
+		{
+			hProcess = PlayAudio(TEXT("ffplay.exe"), TEXT(" audio.mp3 -nodisp -loop 5")); //未来可以将音频文件放在一个单独的文件夹内，让后读取文件夹的所有文件，将读到的文件放在一个列表框让用户自己选择
+			KillTimer(hWnd, wParam);
+			g_index_hours = -1;
+			g_index_min = -1;
+			g_index_sec = -1;
+			return TRUE;
+		}
+		case WM_COMMAND: 
+		{
+			switch (HIWORD(wParam))
+			{
+				case BN_CLICKED: 
+				{
+					if ((HWND)lParam == GetDlgItem(hWnd, IDC_BUTTON1)) 
+					{
+						WCHAR buffer[1024] = {0};
+						WCHAR buffer2[1024] = { 0 };
+						int index_hours, index_min, index_sec, timeRemaining;
+						index_hours = SendMessage(GetDlgItem(hWnd, IDC_COMBO1), CB_GETCURSEL, 0, 0);
+						index_min = SendMessage(GetDlgItem(hWnd, IDC_COMBO2), CB_GETCURSEL, 0, 0);
+						index_sec = SendMessage(GetDlgItem(hWnd, IDC_COMBO3), CB_GETCURSEL, 0, 0);
+						
+						if (g_index_hours != index_hours && g_index_min != index_min && g_index_sec != index_sec) 
+						{
+							timeRemaining = timeDifference(index_hours + 1, index_min + 1, index_sec + 1);
+							g_index_hours = index_hours;
+							g_index_min = index_min;
+							g_index_sec = index_sec;
+							KillTimer(0, ID_ALARM); //删除先前的计时器
+							SetTimer(0, ID_ALARM, timeRemaining * 1000, (TIMERPROC)AlarmProc); //设置新的计时器
+							return TRUE;
+						}
+						MessageBox(0, L"请不要重复设置", 0, 0);
+						return FALSE;
+						
+						
+					}
+					return FALSE;
+				}
+			}
+			return FALSE;
+		}
+		case WM_CLOSE: 
+		{
+			EndDialog(hWnd, 1);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
 BOOL isHaveValue() 
 {
 	HKEY hKey;
@@ -337,3 +437,24 @@ void DeleteAutoRun()
 	RegCloseKey(hKey);
 }
 
+time_t timeDifference(int hour, int minute,int sec) {
+	struct tm* CurrentTime;
+	time_t AfterTotalSeconds, CurrentTotalTime;
+	time_t i;
+	i = time(NULL);
+	CurrentTime = localtime(&i);
+	AfterTotalSeconds = hour * 3600 + minute * 60 + sec;
+	CurrentTotalTime = CurrentTime->tm_hour * 3600 + CurrentTime->tm_min * 60 + CurrentTime->tm_sec;
+	return AfterTotalSeconds - CurrentTotalTime;
+}
+
+HANDLE PlayAudio(LPCWSTR ffplaypath, LPCWSTR AudioPath) {
+	//hProcess = PlayAudio(TEXT("D:\\installation path\\ffmpeg\\bin\\ffplay.exe"), TEXT(" a.mp3 -nodisp -loop 0"));//第二个参数前一定要有空格
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+	ZeroMemory(&si, sizeof(si));
+	ZeroMemory(&pi, sizeof(pi));
+	LPCWSTR lpParameter = AudioPath;
+	CreateProcess(ffplaypath, (LPWSTR)lpParameter, 0, 0, 0, CREATE_NO_WINDOW, 0, 0, &si, &pi);
+	return pi.hProcess;
+}

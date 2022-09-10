@@ -142,9 +142,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Alarm_BaseBox.cpp" />
     <ClCompile Include="clock.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Alarm_BaseBox.h" />
     <ClInclude Include="clock.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>

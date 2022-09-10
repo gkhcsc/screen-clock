@@ -87,6 +87,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 							DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), hWnd_clock, SettingProc);
 							return 0;
 						}
+						case ID_MENU_40006:  //关闭响铃
+						{
+							TerminateProcess(hProcess, 0);
+							return 0;
+						}
 						case ID_MENU_40004: //退出
 						{
 							UnregisterHotKey(hWnd, ID_HOTKEY_CLOSEALARM);
@@ -326,7 +331,7 @@ BOOL CALLBACK SettingProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 BOOL CALLBACK AlarmProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 {
-	
+	HWND hWnd_button;
 	switch (msg)
 	{
 		case WM_INITDIALOG: 
@@ -375,22 +380,54 @@ BOOL CALLBACK AlarmProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 						index_hours = SendMessage(GetDlgItem(hWnd, IDC_COMBO1), CB_GETCURSEL, 0, 0);
 						index_min = SendMessage(GetDlgItem(hWnd, IDC_COMBO2), CB_GETCURSEL, 0, 0);
 						index_sec = SendMessage(GetDlgItem(hWnd, IDC_COMBO3), CB_GETCURSEL, 0, 0);
-						
-						if (g_index_hours != index_hours && g_index_min != index_min && g_index_sec != index_sec) 
+						if (index_hours == -1 && index_min == -1 && index_sec == -1) 
 						{
-							timeRemaining = timeDifference(index_hours + 1, index_min + 1, index_sec + 1);
+							MessageBox(0, L"请先选择", 0, 0);
+							return TRUE;
+						}
+						else if (g_index_hours != index_hours || g_index_min != index_min || g_index_sec != index_sec) 
+						{
+							timeRemaining = timeDifference(index_hours + 1, index_min, index_sec);
 							g_index_hours = index_hours;
 							g_index_min = index_min;
 							g_index_sec = index_sec;
 							KillTimer(0, ID_ALARM); //删除先前的计时器
-							SetTimer(0, ID_ALARM, timeRemaining * 1000, (TIMERPROC)AlarmProc); //设置新的计时器
+							if (SetTimer(0, ID_ALARM, timeRemaining * 1000, (TIMERPROC)AlarmProc) != 0) //设置新的计时器
+							{
+								MessageBox(0, L"设置成功", 0, 0);
+								return TRUE;
+							}
+							else 
+							{
+								MessageBox(0, L"创建计时器失败", 0, 0);
+								return TRUE;
+							}
+							 
+							
 							return TRUE;
 						}
-						MessageBox(0, L"请不要重复设置", 0, 0);
+						else 
+						{
+							MessageBox(0, L"请不要重复设置", 0, 0);	
+							return TRUE;
+						}
+						
 						return FALSE;
-						
-						
 					}
+					if ((HWND)lParam == GetDlgItem(hWnd, IDC_BUTTON2)) 
+					{
+						KillTimer(0, ID_ALARM);
+						g_index_hours = -1;
+						g_index_min = -1;
+						g_index_sec = -1;
+						SendMessage(GetDlgItem(hWnd, IDC_COMBO1), CB_SETCURSEL, (WPARAM)g_index_hours, 0);
+						SendMessage(GetDlgItem(hWnd, IDC_COMBO2), CB_SETCURSEL, (WPARAM)g_index_min, 0);
+						SendMessage(GetDlgItem(hWnd, IDC_COMBO3), CB_SETCURSEL, (WPARAM)g_index_sec, 0);
+						MessageBox(0, L"删除成功", 0, 0);
+						return TRUE;
+					}
+						
+						
 					return FALSE;
 				}
 			}

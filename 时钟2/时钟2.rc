@@ -57,6 +57,7 @@ BEGIN
         MENUITEM "显示",                          ID_MENU_40001
         MENUITEM "隐藏",                          ID_MENU_40002
         MENUITEM "闹铃",                          ID_MENU_40005
+        MENUITEM "关闭响铃",                        ID_MENU_40006
         MENUITEM "设置",                          ID_MENU_40003
         MENUITEM "退出",                          ID_MENU_40004
     END
@@ -103,12 +104,14 @@ FONT 10, "Microsoft Sans Serif", 400, 0, 0x0
 BEGIN
     COMBOBOX        IDC_COMBO1,8,22,35,200,CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_VSCROLL | WS_TABSTOP
     LTEXT           "设置时间",IDC_STATIC,8,8,39,9
-    LTEXT           "时",IDC_STATIC,47,24,9,9,NOT WS_GROUP
-    COMBOBOX        IDC_COMBO2,57,21,35,200,CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "分",IDC_STATIC,95,24,9,9,NOT WS_GROUP
-    COMBOBOX        IDC_COMBO3,107,21,37,200,CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "秒",IDC_STATIC,150,24,9,9,NOT WS_GROUP
-    PUSHBUTTON      "确认设置",IDC_BUTTON1,8,41,33,15
+    LTEXT           "时",IDC_STATIC,47,25,9,9,NOT WS_GROUP
+    COMBOBOX        IDC_COMBO2,57,22,35,200,CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "分",IDC_STATIC,95,25,9,9,NOT WS_GROUP
+    COMBOBOX        IDC_COMBO3,107,22,37,200,CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "秒",IDC_STATIC,150,25,9,9,NOT WS_GROUP
+    PUSHBUTTON      "确认设置",IDC_BUTTON1,8,43,33,15
+    PUSHBUTTON      "删除时间",IDC_BUTTON2,52,43,33,15
+    LTEXT           "快捷键CTRL+ALT+C关闭正在播放的响铃\n也可以在托盘图标的菜单里关闭响铃。\n删除时间并不能关闭正在播放的响铃",IDC_STATIC,10,65,145,25
 END
 
 
@@ -135,8 +138,8 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 166
         TOPMARGIN, 7
-        BOTTOMMARGIN, 56
-        HORZGUIDE, 33
+        BOTTOMMARGIN, 58
+        HORZGUIDE, 34
     END
 END
 #endif    // APSTUDIO_INVOKED

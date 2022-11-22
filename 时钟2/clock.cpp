@@ -44,6 +44,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			InitTray(hInstance, hWnd);
 			RegisterHotKey(hWnd, ID_HOTKEY_HIDEORSHOW, MOD_ALT | MOD_CONTROL,'F');
 			RegisterHotKey(hWnd, ID_HOTKEY_CLOSEALARM, MOD_ALT | MOD_CONTROL, 'C');
+			
+			RegisterHotKey(hWnd, ID_HOTKEY_LEFT, MOD_ALT | MOD_CONTROL, VK_NUMPAD4);
+			RegisterHotKey(hWnd, ID_HOTKEY_RIGHT, MOD_ALT | MOD_CONTROL, VK_NUMPAD6);
+			RegisterHotKey(hWnd, ID_HOTKEY_UP, MOD_ALT | MOD_CONTROL, VK_NUMPAD8);
+			RegisterHotKey(hWnd, ID_HOTKEY_DOWM ,MOD_ALT | MOD_CONTROL, VK_NUMPAD2);
+
 			hWnd_desktop = FindWindow(NULL, TEXT("FolderView"));
 			SetParent(hWnd_clock, hWnd_desktop);
 		
@@ -89,6 +95,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 						}
 						case ID_MENU_40006:  //πÿ±’œÏ¡Â
 						{
+							//
+							NoBackGround(L"C:\\Users\\gkhcsc\\Desktop\\08.bmp", L"C:\\Users\\gkhcsc\\Desktop\\08M.bmp");
+							//
 							TerminateProcess(hProcess, 0);
 							return 0;
 						}
@@ -168,6 +177,34 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					TerminateProcess(hProcess, 0);
 					return 0;
 				}
+				case ID_HOTKEY_LEFT: 
+				{
+					RECT rc;
+					GetWindowRect(hWnd_clock, &rc);
+					MoveWindow(hWnd_clock, rc.left - MovePrePixels, rc.top,rc.right-rc.left, rc.bottom-rc.top, TRUE);
+					return 0;
+				}
+				case ID_HOTKEY_RIGHT: 
+				{
+					RECT rc;
+					GetWindowRect(hWnd_clock, &rc);
+					MoveWindow(hWnd_clock, rc.left + MovePrePixels, rc.top, rc.right - rc.left, rc.bottom - rc.top, TRUE);
+					return 0;
+				}
+				case ID_HOTKEY_UP:
+				{
+					RECT rc;
+					GetWindowRect(hWnd_clock, &rc);
+					MoveWindow(hWnd_clock, rc.left, rc.top - MovePrePixels, rc.right - rc.left, rc.bottom - rc.top, TRUE);
+					return 0;
+				}
+				case ID_HOTKEY_DOWM: 
+				{
+					RECT rc;
+					GetWindowRect(hWnd_clock, &rc);
+					MoveWindow(hWnd_clock, rc.left, rc.top + MovePrePixels, rc.right - rc.left, rc.bottom - rc.top, TRUE);
+					return 0;
+				}
 			}
 			return 0;
 		}
@@ -236,6 +273,14 @@ BOOL CALLBACK SettingProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			{
 				case EN_CHANGE: 
 				{
+					if ((HWND)lParam == GetDlgItem(hWnd, IDC_EDIT1))
+					{	
+						WCHAR GetMovePrePixels[4] ;
+						GetWindowText(GetDlgItem(hWnd, IDC_EDIT1), GetMovePrePixels, 4);
+						MovePrePixels = _wtoi(GetMovePrePixels);
+						return 0;
+					}
+						
 					TCHAR cRGB_R[4];
 					TCHAR cRGB_G[4];
 					TCHAR cRGB_B[4];
@@ -430,6 +475,8 @@ BOOL CALLBACK AlarmProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 						
 					return FALSE;
 				}
+				
+	
 			}
 			return FALSE;
 		}
@@ -494,4 +541,23 @@ HANDLE PlayAudio(LPCWSTR ffplaypath, LPCWSTR AudioPath) {
 	LPCWSTR lpParameter = AudioPath;
 	CreateProcess(ffplaypath, (LPWSTR)lpParameter, 0, 0, 0, CREATE_NO_WINDOW, 0, 0, &si, &pi);
 	return pi.hProcess;
+}
+
+void NoBackGround(const WCHAR* imagePath, const WCHAR* maskPath)
+{
+	HDC hdc, hdcDesktop;
+	hdcDesktop = GetDC(FindWindow(NULL, TEXT("FolderView")));
+	hdc = CreateCompatibleDC(NULL);
+	HANDLE hbitmap = LoadImage(NULL, imagePath, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+	HANDLE hMask = LoadImage(NULL,maskPath, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+	SelectObject(hdc, hbitmap);
+	BitBlt(hdcDesktop, 0, 0, 1920, 1500, hdc, 0, 0, SRCINVERT);
+	SelectObject(hdc, hMask);
+	BitBlt(hdcDesktop, 0, 0, 1920, 1500, hdc, 0, 0, SRCAND);
+	SelectObject(hdc, hbitmap);
+	BitBlt(hdcDesktop, 0, 0, 1920, 1500, hdc, 0, 0, SRCINVERT);
+	DeleteDC(hdc);
+	DeleteDC(hdcDesktop);
+
+	
 }

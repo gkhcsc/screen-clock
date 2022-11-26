@@ -34,7 +34,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	static HFONT hFont;
+	static HFONT hFont;	
 	static HMENU hMenu;
 	static HINSTANCE hInstance = (HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE);
 	switch (msg)
@@ -251,26 +251,29 @@ void InitTray(HINSTANCE hInstance, HWND hWnd)
 
 BOOL CALLBACK SettingProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 {
+	unsigned int a = 0;
 	switch (msg)
 	{
 		case WM_INITDIALOG: 
 		{
 			if (isHaveValue() == TRUE)
 			{
-				SendMessage(GetDlgItem(hWnd, IDC_CHECK1), BM_SETCHECK, 1, 0);
+				SendMessage(GetDlgItem(hWnd, IDC_CHECK_AutoRun), BM_SETCHECK, 1, 0);
 			}
 			DWORD flag;
 			GetLayeredWindowAttributes(hWnd_clock, NULL, NULL, &flag);
 			if (flag == LWA_ALPHA) 
 			{
-				SendMessage(GetDlgItem(hWnd, IDC_CHECK2), BM_SETCHECK, 1, 0);
+				SendMessage(GetDlgItem(hWnd, IDC_CHECK_BackGround), BM_SETCHECK, 1, 0);
 			}
 			return TRUE;
 		}
 		case WM_COMMAND: 
 		{
+			a = HIWORD(wParam);
 			switch (HIWORD(wParam))
 			{
+				
 				case EN_CHANGE: 
 				{
 					if ((HWND)lParam == GetDlgItem(hWnd, IDC_EDIT1))
@@ -308,21 +311,21 @@ BOOL CALLBACK SettingProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 						RGB_B = _wtoi(cRGB_B);
 						return TRUE;
 					}
-					if ((HWND)lParam == GetDlgItem(hWnd, IDC_CHECK1)) 
+					if ((HWND)lParam == GetDlgItem(hWnd, IDC_CHECK_AutoRun)) 
 					{
-						if (IsDlgButtonChecked(hWnd, IDC_CHECK1) == BST_UNCHECKED)
+						if (IsDlgButtonChecked(hWnd, IDC_CHECK_AutoRun) == BST_UNCHECKED)
 						{
 							if (isHaveValue() == FALSE)
 							{
 								SendMessage((HWND)lParam, BM_SETCHECK, 1, 0);
-								AutoRun();
+								SetAutoRun();
 								return TRUE;
 							}
 							return FALSE;
 						}
 							
 
-						if (IsDlgButtonChecked(hWnd, IDC_CHECK1) == BST_CHECKED) 
+						if (IsDlgButtonChecked(hWnd, IDC_CHECK_AutoRun) == BST_CHECKED) 
 						{
 							SendMessage((HWND)lParam, BM_SETCHECK, 0, 0);
 							DeleteAutoRun();
@@ -330,9 +333,9 @@ BOOL CALLBACK SettingProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 						}
 						return FALSE;
 					}
-					if ((HWND)lParam == GetDlgItem(hWnd, IDC_CHECK2)) 
+					if ((HWND)lParam == GetDlgItem(hWnd, IDC_CHECK_BackGround)) 
 					{
-						if (IsDlgButtonChecked(hWnd, IDC_CHECK2) == BST_UNCHECKED)
+						if (IsDlgButtonChecked(hWnd, IDC_CHECK_BackGround) == BST_UNCHECKED)
 						{
 							SetLayeredWindowAttributes(hWnd_clock, RGB(255, 255, 255), 255, LWA_ALPHA);
 							SendMessage((HWND)lParam, BM_SETCHECK, 1, 0);
@@ -503,7 +506,7 @@ BOOL isHaveValue()
 	}
 }
 
-void AutoRun()
+void SetAutoRun()
 {
 	HKEY hKey;
 	TCHAR szPath[MAX_PATH];
@@ -545,6 +548,7 @@ HANDLE PlayAudio(LPCWSTR ffplaypath, LPCWSTR AudioPath) {
 
 void NoBackGround(const WCHAR* imagePath, const WCHAR* maskPath)
 {
+	//在桌面显示图片，使用了模板
 	HDC hdc, hdcDesktop;
 	hdcDesktop = GetDC(FindWindow(NULL, TEXT("FolderView")));
 	hdc = CreateCompatibleDC(NULL);
@@ -558,6 +562,4 @@ void NoBackGround(const WCHAR* imagePath, const WCHAR* maskPath)
 	BitBlt(hdcDesktop, 0, 0, 1920, 1500, hdc, 0, 0, SRCINVERT);
 	DeleteDC(hdc);
 	DeleteDC(hdcDesktop);
-
-	
 }

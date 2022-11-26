@@ -12,8 +12,8 @@
 #define IDC_EDIT5                       1005
 #define IDC_BUTTON1                     1006
 #define IDC_STATIC4                     1007
-#define IDC_CHECK1                      1010
-#define IDC_CHECK2                      1012
+#define IDC_CHECK_AutoRun                      1010
+#define IDC_CHECK_BackGround                      1012
 #define IDC_COMBO1                      1046
 #define IDC_COMBO2                      1050
 #define IDC_COMBO3                      1051

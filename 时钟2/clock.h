@@ -27,7 +27,7 @@ int RGB_G2 = 255;
 int RGB_B2 = 0;
 
 int MovePrePixels = 3;
-void AutoRun();
+void SetAutoRun();
 void DeleteAutoRun();
 BOOL isHaveValue();
 void InitTray(HINSTANCE hInstance, HWND hWnd);

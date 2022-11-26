@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.32126.315
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "时钟2", "时钟2\时钟2.vcxproj", "{E10935AE-2125-4F8D-A768-BFE5283626E8}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "卸载时钟", "卸载时钟\卸载时钟.vcxproj", "{76D1A49C-6301-487F-861A-731905D94F41}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{E10935AE-2125-4F8D-A768-BFE5283626E8}.Release|x64.Build.0 = Release|x64
 		{E10935AE-2125-4F8D-A768-BFE5283626E8}.Release|x86.ActiveCfg = Release|Win32
 		{E10935AE-2125-4F8D-A768-BFE5283626E8}.Release|x86.Build.0 = Release|Win32
+		{76D1A49C-6301-487F-861A-731905D94F41}.Debug|x64.ActiveCfg = Debug|x64
+		{76D1A49C-6301-487F-861A-731905D94F41}.Debug|x64.Build.0 = Debug|x64
+		{76D1A49C-6301-487F-861A-731905D94F41}.Debug|x86.ActiveCfg = Debug|Win32
+		{76D1A49C-6301-487F-861A-731905D94F41}.Debug|x86.Build.0 = Debug|Win32
+		{76D1A49C-6301-487F-861A-731905D94F41}.Release|x64.ActiveCfg = Release|x64
+		{76D1A49C-6301-487F-861A-731905D94F41}.Release|x64.Build.0 = Release|x64
+		{76D1A49C-6301-487F-861A-731905D94F41}.Release|x86.ActiveCfg = Release|Win32
+		{76D1A49C-6301-487F-861A-731905D94F41}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

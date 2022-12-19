@@ -20,7 +20,6 @@ using namespace Gdiplus;
 
 
 
-
 HWND hWnd_clock, hWnd_desktop, hWnd_time;
 NOTIFYICONDATA nid;
 int RGB_R = 0;
@@ -33,8 +32,9 @@ int RGB_B2 = 0;
 
 int MovePrePixels = 3;
 
-void InitTray(HINSTANCE hInstance, HWND hWnd);
-
+void Quit(HINSTANCE hInstance, HWND hWnd, NOTIFYICONDATA nid);
+void CreateTray(HINSTANCE hInstance, HWND hWnd);
+void DeleteTray(NOTIFYICONDATA nid);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK SettingProc(HWND, UINT, WPARAM, LPARAM);
 

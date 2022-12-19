@@ -22,7 +22,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	wndclass.style = CS_VREDRAW | CS_HREDRAW;
 
 	RegisterClass(&wndclass);
-	hWnd_clock = CreateWindowEx(WS_EX_LAYERED, szAppName, TEXT("Alarm clock"), WS_POPUP, 1200, 20, WINDOW_WIDTH, WINDOW_HEIGH, NULL, NULL, hInstance, NULL);
+	hWnd_clock = CreateWindowEx(WS_EX_TOOLWINDOW|WS_EX_LAYERED, szAppName, TEXT("Alarm clock"), WS_POPUP, 1200, 20, WINDOW_WIDTH, WINDOW_HEIGH, NULL, NULL, hInstance, NULL);
 	
 	SetWindowPos(hWnd_clock, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOREPOSITION);
 	ShowWindow(hWnd_clock, iCmdShow);
@@ -38,6 +38,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	static BOOL IsHide = FALSE;
 	static HFONT hFont;	
 	static HMENU hMenu;
 	static HINSTANCE hInstance = (HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE);
@@ -45,7 +46,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		case WM_CREATE:   
 		{
-			InitTray(hInstance, hWnd);
+			CreateTray(hInstance, hWnd);
 			RegisterHotKey(hWnd, ID_HOTKEY_HIDEORSHOW, MOD_ALT | MOD_CONTROL,'F');
 			RegisterHotKey(hWnd, ID_HOTKEY_CLOSEALARM, MOD_ALT | MOD_CONTROL, 'C');
 			
@@ -61,7 +62,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			hMenu = GetSubMenu(hMenu, 0);
 			hFont = CreateFont(-30, -15, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_CHARACTER_PRECIS, CLIP_DEFAULT_PRECIS, PROOF_QUALITY, FF_MODERN, TEXT("微软雅黑"));
 			
-			SetTimer(hWnd, 0, 900, NULL);  //当回调函数填NULL时，是将消息发送到默认回调函数，详见下方WM_TIMER
+			SetTimer(hWnd, 0, REFRESH_RATE, NULL);  //当回调函数填NULL时，是将消息发送到默认回调函数，详见下方WM_TIMER
 			SendMessage(hWnd_time, WM_SETFONT, (WPARAM)hFont, NULL);
 			CheckMenuItem(hMenu, ID_MENU_40001, MF_CHECKED);
 			return 0;
@@ -76,7 +77,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					{
 						case ID_MENU_40001:   //显示
 						{
-							ShowWindow(hWnd_clock, SW_SHOW);
+							IsHide = FALSE;
+							PostMessage(hWnd_clock, WM_TIMER, 0, 0);
 							CheckMenuItem(hMenu, ID_MENU_40001, MF_CHECKED);
 							CheckMenuItem(hMenu, ID_MENU_40002, MF_UNCHECKED);
 
@@ -84,7 +86,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 						}
 						case ID_MENU_40002:   //隐藏
 						{
-							ShowWindow(hWnd_clock, SW_HIDE);
+							IsHide = TRUE;
+							PostMessage(hWnd_clock, WM_TIMER, 0, 0);
 							CheckMenuItem(hMenu, ID_MENU_40002, MF_CHECKED);
 							CheckMenuItem(hMenu, ID_MENU_40001, MF_UNCHECKED);
 
@@ -105,13 +108,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 						}
 						case ID_MENU_40004: //退出
 						{
-							UnregisterHotKey(hWnd, ID_HOTKEY_CLOSEALARM);
-							UnregisterHotKey(hWnd, ID_HOTKEY_HIDEORSHOW);
-							_TerminateProcess();
-							KillTimer(0, ID_ALARM);
-							UnregisterHotKey(hWnd, ID_HOTKEY_HIDEORSHOW);
-							Shell_NotifyIcon(NIM_DELETE, &nid);
-							PostQuitMessage(0);
+							Quit(hInstance, hWnd,nid);
 							return 0;
 						}
 						case ID_MENU_40005:  //闹铃
@@ -158,17 +155,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			{
 				case ID_HOTKEY_HIDEORSHOW: 
 				{
-					if (IsWindowVisible(hWnd_clock))  //如果窗口显示，则隐藏 
+
+					
+					if (IsHide == FALSE)  //如果窗口显示，则隐藏 
 					{
-						ShowWindow(hWnd_clock, SW_HIDE);
+						PostMessage(hWnd_clock, WM_TIMER, 0, 0);
 						CheckMenuItem(hMenu, ID_MENU_40002, MF_CHECKED);
 						CheckMenuItem(hMenu, ID_MENU_40001, MF_UNCHECKED);
+						IsHide = TRUE;
 					}
 					else
 					{
-						ShowWindow(hWnd_clock, SW_SHOW);
+						PostMessage(hWnd_clock, WM_TIMER, 0, 0);
 						CheckMenuItem(hMenu, ID_MENU_40001, MF_CHECKED);
 						CheckMenuItem(hMenu, ID_MENU_40002, MF_UNCHECKED);
+						IsHide = FALSE;
 					}
 					return 0;
 				}
@@ -232,22 +233,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			Graphics g(memDC);
 			DrawStr(&g, WINDOW_WIDTH, WINDOW_HEIGH, szBuffer);
 			POINT p2 = { 0,0 };
-			ShowWindow(hWnd, SW_SHOW);
-			UpdateWindow(hWnd);
+			
 			SIZE size = { WINDOW_WIDTH,WINDOW_HEIGH };
-			UpdateLayeredWindow(hWnd_clock, hdc, NULL, &size, memDC, &p2, NULL, &_Blend, ULW_ALPHA);
-			return 0;
-
+			if (IsHide == FALSE)
+			{
+				UpdateLayeredWindow(hWnd_clock, hdc, NULL, &size, memDC, &p2, NULL, &_Blend, ULW_ALPHA);
+				return 0;
+			}
+			else 
+			{
+				HBITMAP bmp;
+				bmp = CreateCompatibleBitmap(hdc, WINDOW_WIDTH, WINDOW_HEIGH);
+				SelectObject(memDC, bmp);
+				UpdateLayeredWindow(hWnd_clock, hdc, NULL, &size, memDC, &p2, NULL, &_Blend, ULW_ALPHA);
+				return 0;
+			}
 		}
 		case WM_DESTROY:
 		{
-			UnregisterHotKey(hWnd, ID_HOTKEY_CLOSEALARM);
-			UnregisterHotKey(hWnd, ID_HOTKEY_HIDEORSHOW);
-			_TerminateProcess();
-			KillTimer(0, ID_ALARM);
-			UnregisterHotKey(hWnd, ID_HOTKEY_HIDEORSHOW);
-			Shell_NotifyIcon(NIM_DELETE, &nid);
-			PostQuitMessage(0);
+			Quit(hInstance,hWnd,nid);
 			return 0;
 		}
 
@@ -256,7 +260,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
-void InitTray(HINSTANCE hInstance, HWND hWnd)
+void CreateTray(HINSTANCE hInstance, HWND hWnd)
 {
 	nid.cbSize = sizeof(NOTIFYICONDATA);
 	nid.hWnd = hWnd;
@@ -267,7 +271,10 @@ void InitTray(HINSTANCE hInstance, HWND hWnd)
 	wcscpy(nid.szTip, L"时钟");
 	Shell_NotifyIcon(NIM_ADD, &nid);
 }
-
+void DeleteTray(NOTIFYICONDATA nid)
+{
+	Shell_NotifyIcon(NIM_DELETE, &nid);
+}
 BOOL CALLBACK SettingProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 {
 	unsigned int a = 0;
@@ -460,4 +467,16 @@ void DrawStr(Gdiplus::Graphics* g, int width, int height, const WCHAR m_Str[])
 
 
 
+}
+
+void Quit(HINSTANCE hInstance, HWND hWnd, NOTIFYICONDATA nid)
+{
+	DeleteTray(nid);
+	UnregisterHotKey(hWnd, ID_HOTKEY_CLOSEALARM);
+	UnregisterHotKey(hWnd, ID_HOTKEY_HIDEORSHOW);
+	_TerminateProcess();
+	KillTimer(0, ID_ALARM);
+	UnregisterHotKey(hWnd, ID_HOTKEY_HIDEORSHOW);
+	Shell_NotifyIcon(NIM_DELETE, &nid);
+	PostQuitMessage(0);
 }

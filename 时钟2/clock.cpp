@@ -4,6 +4,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	TCHAR szAppName[] = TEXT("clock");
 	WNDCLASS wndclass;
 	MSG msg;
+	GdiplusStartupInput gdiplusStartupInput;
+	ULONG_PTR           gdiplusToken;
+
+	// Initialize GDI+.
+	GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 	wndclass.lpfnWndProc = WndProc;
 	wndclass.hInstance = hInstance;
 	wndclass.hCursor = LoadCursor(NULL, IDC_ARROW);
@@ -17,17 +22,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	wndclass.style = CS_VREDRAW | CS_HREDRAW;
 
 	RegisterClass(&wndclass);
-	hWnd_clock = CreateWindowEx(WS_EX_TOOLWINDOW|WS_EX_LAYERED, szAppName, TEXT("Alarm clock"), WS_POPUP, 1200, 20, 200, 50, NULL, NULL, hInstance, NULL);
-
+	hWnd_clock = CreateWindowEx(WS_EX_LAYERED, szAppName, TEXT("Alarm clock"), WS_POPUP, 1200, 20, WINDOW_WIDTH, WINDOW_HEIGH, NULL, NULL, hInstance, NULL);
+	
 	SetWindowPos(hWnd_clock, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOREPOSITION);
 	ShowWindow(hWnd_clock, iCmdShow);
 	UpdateWindow(hWnd_clock);
-	SetLayeredWindowAttributes(hWnd_clock, RGB(255, 255, 255), 255, LWA_COLORKEY);
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
 		TranslateMessage(&msg); // 翻译虚拟键代码为字符
 		DispatchMessage(&msg); //分发消息
 	}
+	GdiplusShutdown(gdiplusToken);
 	return msg.wParam; //返回PostQuitMessage 函数中给定的退出代码。
 }
 
@@ -52,11 +57,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			hWnd_desktop = FindWindow(NULL, TEXT("FolderView"));
 			SetParent(hWnd_clock, hWnd_desktop);
 		
-			hWnd_time = CreateWindow(TEXT("static"), NULL, WS_CHILD | WS_VISIBLE, 0, 0, 260, 129, hWnd, NULL, hInstance, NULL);
 			hMenu = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_MENU1));
 			hMenu = GetSubMenu(hMenu, 0);
 			hFont = CreateFont(-30, -15, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_CHARACTER_PRECIS, CLIP_DEFAULT_PRECIS, PROOF_QUALITY, FF_MODERN, TEXT("微软雅黑"));
-			SetWindowLong(hWnd_clock, GWL_STYLE, WS_CHILD);
+			
 			SetTimer(hWnd, 0, 900, NULL);  //当回调函数填NULL时，是将消息发送到默认回调函数，详见下方WM_TIMER
 			SendMessage(hWnd_time, WM_SETFONT, (WPARAM)hFont, NULL);
 			CheckMenuItem(hMenu, ID_MENU_40001, MF_CHECKED);
@@ -211,19 +215,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			CurrentTime = localtime(&t);
 			TCHAR szBuffer[50];
 			wsprintf(szBuffer, TEXT("%d时%d分%d秒"), CurrentTime->tm_hour, CurrentTime->tm_min, CurrentTime->tm_sec);
-			SetWindowText(hWnd_time, szBuffer);
-			HDC hdc = GetDC(NULL);
+			
+			
+			HDC hdc = GetDC(hWnd_clock);
 			HDC memDC = CreateCompatibleDC(hdc);
+
 			BLENDFUNCTION _Blend;
 			_Blend.BlendOp = 0;
 			_Blend.BlendFlags = 0;
 			_Blend.AlphaFormat = 1;
 			_Blend.SourceConstantAlpha = 255;
+
 			HBITMAP bmp;
-			bmp = ::CreateCompatibleBitmap(hdc, 600, 74);
-			::SelectObject(memDC, bmp);
+			bmp = CreateCompatibleBitmap(hdc, WINDOW_WIDTH, WINDOW_HEIGH);
+			SelectObject(memDC, bmp);
+			Graphics g(memDC);
+			DrawStr(&g, WINDOW_WIDTH, WINDOW_HEIGH, szBuffer);
 			POINT p2 = { 0,0 };
-			UpdateLayeredWindow(hWnd_clock, hdc, NULL, NULL, memDC, &p2, NULL, &_Blend, ULW_ALPHA);
+			ShowWindow(hWnd, SW_SHOW);
+			UpdateWindow(hWnd);
+			SIZE size = { WINDOW_WIDTH,WINDOW_HEIGH };
+			UpdateLayeredWindow(hWnd_clock, hdc, NULL, &size, memDC, &p2, NULL, &_Blend, ULW_ALPHA);
 			return 0;
 
 		}
@@ -400,4 +412,52 @@ void NoBackGround(const WCHAR* imagePath, const WCHAR* maskPath)
 	BitBlt(hdcDesktop, 0, 0, 1920, 1500, hdc, 0, 0, SRCINVERT);
 	DeleteDC(hdc);
 	DeleteDC(hdcDesktop);
+}
+
+void DrawStr(Gdiplus::Graphics* g, int width, int height, const WCHAR m_Str[])
+{
+	Gdiplus::FontFamily fontFamily(L"黑体");
+	Gdiplus::Font font(&fontFamily, 25, Gdiplus::FontStyleBold, Gdiplus::UnitPoint);
+	Gdiplus::RectF rectF(Gdiplus::REAL(0), Gdiplus::REAL(0), Gdiplus::REAL(width), Gdiplus::REAL(height));
+
+
+
+	Gdiplus::StringFormat stringFormat;
+
+	//设置居中对齐
+	stringFormat.SetAlignment(Gdiplus::StringAlignmentCenter);
+	stringFormat.SetLineAlignment(Gdiplus::StringAlignmentCenter);
+
+
+	//输出
+
+	Gdiplus::GraphicsPath strPath;
+	strPath.AddString(m_Str, lstrlen(m_Str), &fontFamily, Gdiplus::FontStyleBold, 30, rectF, &stringFormat);
+	Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 0), 2);
+	//
+	Gdiplus::Rect rect;
+	Gdiplus::Pen RedPen(Gdiplus::Color(255, 255, 0, 0));
+
+	strPath.GetBounds(&rect, NULL, &RedPen);
+
+
+	Gdiplus::LinearGradientBrush LGBrush(Gdiplus::Point(rect.Width / 2, 6), Gdiplus::Point(rect.Width / 2, rect.Height), Gdiplus::Color(255, 0, 255, 0), Gdiplus::Color(255, 0, 255, 0));
+	//消除锯齿
+	//g->SetTextRenderingHint(Gdiplus::TextRenderingHintSingleBitPerPixel);
+	//g->SetTextRenderingHint(Gdiplus::TextRenderingHintAntiAlias);
+	g->SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+	g->DrawPath(&pen, &strPath);
+	g->FillPath(&LGBrush, &strPath);
+
+	//裁剪
+	Gdiplus::Region rgn(&strPath);
+	//g->SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+	g->SetClip(&rgn);
+
+	Gdiplus::LinearGradientBrush PlayBrush(Gdiplus::Point(rect.Width / 2, 6), Gdiplus::Point(rect.Width / 2, rect.Height), Gdiplus::Color(255, 93, 240, 252), Gdiplus::Color(255, 223, 252, 253));
+	rect.Width -= 200;
+	g->FillRectangle(&PlayBrush, rect);
+
+
+
 }

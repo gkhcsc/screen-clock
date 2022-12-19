@@ -12,7 +12,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	wndclass.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
 	wndclass.lpszMenuName = NULL;
 	wndclass.lpszClassName = szAppName;
-	wndclass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+	wndclass.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
+
 	wndclass.cbClsExtra = 0;
 	wndclass.cbWndExtra = 0;
 	wndclass.style = CS_VREDRAW | CS_HREDRAW;
@@ -20,9 +21,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	RegisterClass(&wndclass);
 	hWnd_clock = CreateWindowEx(WS_EX_TOOLWINDOW|WS_EX_LAYERED, szAppName, TEXT("Alarm clock"), WS_POPUP, 1200, 20, 200, 50, NULL, NULL, hInstance, NULL);
 
+	SetWindowPos(hWnd_clock, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOREPOSITION);
 	ShowWindow(hWnd_clock, iCmdShow);
 	UpdateWindow(hWnd_clock);
-	SetWindowPos(hWnd_clock, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOREPOSITION);
 	SetLayeredWindowAttributes(hWnd_clock, RGB(255, 255, 255), 255, LWA_COLORKEY);
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
@@ -58,7 +59,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			hMenu = GetSubMenu(hMenu, 0);
 			hFont = CreateFont(-30, -15, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_CHARACTER_PRECIS, CLIP_DEFAULT_PRECIS, PROOF_QUALITY, FF_MODERN, TEXT("微软雅黑"));
 			SetWindowLong(hWnd_clock, GWL_STYLE, WS_CHILD);
-			SetTimer(hWnd, 0, 900, NULL);
+			SetTimer(hWnd, 0, 900, NULL);  //当回调函数填NULL时，是将消息发送到默认回调函数，详见下方WM_TIMER
 			SendMessage(hWnd_time, WM_SETFONT, (WPARAM)hFont, NULL);
 			CheckMenuItem(hMenu, ID_MENU_40001, MF_CHECKED);
 			return 0;
@@ -84,7 +85,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 							ShowWindow(hWnd_clock, SW_HIDE);
 							CheckMenuItem(hMenu, ID_MENU_40002, MF_CHECKED);
 							CheckMenuItem(hMenu, ID_MENU_40001, MF_UNCHECKED);
-
 
 							return 0;
 						}
@@ -150,8 +150,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				return (INT_PTR)hBursh;
 			}
 		}
-				
-		
 		case WM_HOTKEY: 
 		{
 			switch (wParam)
@@ -216,7 +214,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			TCHAR szBuffer[50];
 			wsprintf(szBuffer, TEXT("%d时%d分%d秒"), CurrentTime->tm_hour, CurrentTime->tm_min, CurrentTime->tm_sec);
 			SetWindowText(hWnd_time, szBuffer);
-
+			HDC hdc = GetDC(NULL);
+			HDC memDC = CreateCompatibleDC(hdc);
+			BLENDFUNCTION _Blend;
+			_Blend.BlendOp = 0;
+			_Blend.BlendFlags = 0;
+			_Blend.AlphaFormat = 1;
+			_Blend.SourceConstantAlpha = 255;
+			HBITMAP bmp;
+			bmp = ::CreateCompatibleBitmap(hdc, 600, 74);
+			::SelectObject(memDC, bmp);
+			POINT p2 = { 0,0 };
+			UpdateLayeredWindow(hWnd_clock, hdc, NULL, NULL, memDC, &p2, NULL, &_Blend, ULW_ALPHA);
 			return 0;
 
 		}
@@ -450,8 +459,6 @@ BOOL CALLBACK AlarmProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 								MessageBox(0, L"创建计时器失败", 0, 0);
 								return TRUE;
 							}
-							 
-							
 							return TRUE;
 						}
 						else 

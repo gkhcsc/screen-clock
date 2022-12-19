@@ -10,6 +10,7 @@ BOOL isHaveValue();
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow)
 {
+	// 使用WinMain是因为他不会弹出命令窗口
 	//弹出对话框提示是否确认删除
 	if (MessageBox(NULL, L"确认卸载？", L"确认？", MB_OKCANCEL | MB_ICONEXCLAMATION) == IDOK)
 	{

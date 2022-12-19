@@ -1,4 +1,5 @@
 #include "clock.h"
+//2.0
 int g_index_hours = -1, g_index_min = -1, g_index_sec = -1;
 HANDLE hProcess;
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow)

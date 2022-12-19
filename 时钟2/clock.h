@@ -1,8 +1,9 @@
 #pragma once
+#include "Alarm.h"
+#include "config.h"
 #include <Windows.h>
 #include <stdio.h>
 #include <time.h>
-#include <atlimage.h>
 #include <gdiplus.h>
 using namespace Gdiplus;
 #pragma comment (lib,"Gdiplus.lib")
@@ -17,8 +18,7 @@ using namespace Gdiplus;
 #define WINDOW_WIDTH 200
 #define WINDOW_HEIGH 50
 
-#define AUTOPATH  L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"
-#define ID_ALARM 1
+
 
 
 HWND hWnd_clock, hWnd_desktop, hWnd_time;
@@ -32,15 +32,12 @@ int RGB_G2 = 255;
 int RGB_B2 = 0;
 
 int MovePrePixels = 3;
-void SetAutoRun();
-void DeleteAutoRun();
-BOOL isHaveValue();
+
 void InitTray(HINSTANCE hInstance, HWND hWnd);
-time_t timeDifference(int hour, int minute,int sec);
-HANDLE PlayAudio(LPCWSTR ffplaypath, LPCWSTR AudioPath);
+
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK SettingProc(HWND, UINT, WPARAM, LPARAM);
-BOOL CALLBACK AlarmProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 void NoBackGround(const WCHAR* imagePath, const WCHAR* maskPath);
 
 void DrawStr(Gdiplus::Graphics* g, int x, int y, const WCHAR m_Str[]);

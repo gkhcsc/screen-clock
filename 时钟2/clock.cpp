@@ -38,6 +38,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	static HBRUSH hBursh_static = (HBRUSH)GetStockObject(WHITE_BRUSH);
 	static BOOL IsHide = FALSE;
 	static HFONT hFont;	
 	static HMENU hMenu;
@@ -46,14 +47,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		case WM_CREATE:   
 		{
+			//创建托盘图标
 			CreateTray(hInstance, hWnd);
-			RegisterHotKey(hWnd, ID_HOTKEY_HIDEORSHOW, MOD_ALT | MOD_CONTROL,'F');
-			RegisterHotKey(hWnd, ID_HOTKEY_CLOSEALARM, MOD_ALT | MOD_CONTROL, 'C');
-			
-			RegisterHotKey(hWnd, ID_HOTKEY_LEFT, MOD_ALT | MOD_CONTROL, VK_NUMPAD4);
-			RegisterHotKey(hWnd, ID_HOTKEY_RIGHT, MOD_ALT | MOD_CONTROL, VK_NUMPAD6);
-			RegisterHotKey(hWnd, ID_HOTKEY_UP, MOD_ALT | MOD_CONTROL, VK_NUMPAD8);
-			RegisterHotKey(hWnd, ID_HOTKEY_DOWM ,MOD_ALT | MOD_CONTROL, VK_NUMPAD2);
+			//注册全局快捷键
+			_RegisterHotKey(hWnd);
 
 			hWnd_desktop = FindWindow(NULL, TEXT("FolderView"));
 			SetParent(hWnd_clock, hWnd_desktop);
@@ -142,11 +139,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		{
 			if ((HWND)lParam == hWnd_time) 
 			{
-				HBRUSH hBursh = (HBRUSH)GetStockObject(WHITE_BRUSH);
 				SetTextColor((HDC)wParam, RGB(RGB_R, RGB_G, RGB_B));
 				SetBkColor((HDC)wParam, RGB(RGB_R, RGB_G, RGB_B));
 				SetBkMode((HDC)wParam, TRANSPARENT);
-				return (INT_PTR)hBursh;
+				return (INT_PTR)hBursh_static;
 			}
 		}
 		case WM_HOTKEY: 
@@ -155,8 +151,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			{
 				case ID_HOTKEY_HIDEORSHOW: 
 				{
-
-					
 					if (IsHide == FALSE)  //如果窗口显示，则隐藏 
 					{
 						PostMessage(hWnd_clock, WM_TIMER, 0, 0);
@@ -227,27 +221,36 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			_Blend.AlphaFormat = 1;
 			_Blend.SourceConstantAlpha = 255;
 
-			HBITMAP bmp;
-			bmp = CreateCompatibleBitmap(hdc, WINDOW_WIDTH, WINDOW_HEIGH);
-			SelectObject(memDC, bmp);
-			Graphics g(memDC);
-			DrawStr(&g, WINDOW_WIDTH, WINDOW_HEIGH, szBuffer);
-			POINT p2 = { 0,0 };
 			
+			POINT p2 = { 0,0 };
 			SIZE size = { WINDOW_WIDTH,WINDOW_HEIGH };
+			
 			if (IsHide == FALSE)
 			{
+				HBITMAP bmp;
+				bmp = CreateCompatibleBitmap(hdc, WINDOW_WIDTH, WINDOW_HEIGH);
+				SelectObject(memDC, bmp);
+
+				Graphics g(memDC);
+				DrawStr(&g, WINDOW_WIDTH, WINDOW_HEIGH, szBuffer);
+
 				UpdateLayeredWindow(hWnd_clock, hdc, NULL, &size, memDC, &p2, NULL, &_Blend, ULW_ALPHA);
-				return 0;
+				DeleteObject(bmp);//必须要删除，不然会造成卡顿
 			}
 			else 
 			{
 				HBITMAP bmp;
 				bmp = CreateCompatibleBitmap(hdc, WINDOW_WIDTH, WINDOW_HEIGH);
 				SelectObject(memDC, bmp);
+
 				UpdateLayeredWindow(hWnd_clock, hdc, NULL, &size, memDC, &p2, NULL, &_Blend, ULW_ALPHA);
-				return 0;
+				DeleteObject(bmp);//必须要删除，不然会造成卡顿
 			}
+			//必须要删除，不然会造成卡顿
+			DeleteDC(memDC);
+			ReleaseDC(hWnd, hdc);
+			return 0;
+			
 		}
 		case WM_DESTROY:
 		{
@@ -271,12 +274,15 @@ void CreateTray(HINSTANCE hInstance, HWND hWnd)
 	wcscpy(nid.szTip, L"时钟");
 	Shell_NotifyIcon(NIM_ADD, &nid);
 }
+
 void DeleteTray(NOTIFYICONDATA nid)
 {
 	Shell_NotifyIcon(NIM_DELETE, &nid);
 }
+
 BOOL CALLBACK SettingProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 {
+	static HBRUSH hBursh_static = (HBRUSH)CreateSolidBrush(RGB(RGB_R2, RGB_G2, RGB_B2));
 	unsigned int a = 0;
 	switch (msg)
 	{
@@ -386,9 +392,9 @@ BOOL CALLBACK SettingProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		{
 			if ((HWND)lParam == GetDlgItem(hWnd, IDC_STATIC4)) 
 			{
-				HBRUSH hBursh = (HBRUSH)CreateSolidBrush(RGB(RGB_R2, RGB_G2, RGB_B2));
+				
 				SetBkMode((HDC)wParam, TRANSPARENT);
-				return (INT_PTR)hBursh;
+				return (INT_PTR)hBursh_static;
 				
 			}
 			return FALSE;
@@ -441,11 +447,11 @@ void DrawStr(Gdiplus::Graphics* g, int width, int height, const WCHAR m_Str[])
 	Gdiplus::GraphicsPath strPath;
 	strPath.AddString(m_Str, lstrlen(m_Str), &fontFamily, Gdiplus::FontStyleBold, 30, rectF, &stringFormat);
 	Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 0), 2);
-	//
-	Gdiplus::Rect rect;
-	Gdiplus::Pen RedPen(Gdiplus::Color(255, 255, 0, 0));
 
-	strPath.GetBounds(&rect, NULL, &RedPen);
+	Gdiplus::Rect rect;
+	//Gdiplus::Pen RedPen(Gdiplus::Color(255, 255, 0, 0));
+
+	//strPath.GetBounds(&rect, NULL, &RedPen);
 
 
 	Gdiplus::LinearGradientBrush LGBrush(Gdiplus::Point(rect.Width / 2, 6), Gdiplus::Point(rect.Width / 2, rect.Height), Gdiplus::Color(255, 0, 255, 0), Gdiplus::Color(255, 0, 255, 0));
@@ -456,14 +462,14 @@ void DrawStr(Gdiplus::Graphics* g, int width, int height, const WCHAR m_Str[])
 	g->DrawPath(&pen, &strPath);
 	g->FillPath(&LGBrush, &strPath);
 
-	//裁剪
-	Gdiplus::Region rgn(&strPath);
-	//g->SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
-	g->SetClip(&rgn);
+	////裁剪
+	//Gdiplus::Region rgn(&strPath);
+	////g->SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+	//g->SetClip(&rgn);
 
-	Gdiplus::LinearGradientBrush PlayBrush(Gdiplus::Point(rect.Width / 2, 6), Gdiplus::Point(rect.Width / 2, rect.Height), Gdiplus::Color(255, 93, 240, 252), Gdiplus::Color(255, 223, 252, 253));
-	rect.Width -= 200;
-	g->FillRectangle(&PlayBrush, rect);
+	//Gdiplus::LinearGradientBrush PlayBrush(Gdiplus::Point(rect.Width / 2, 6), Gdiplus::Point(rect.Width / 2, rect.Height), Gdiplus::Color(255, 93, 240, 252), Gdiplus::Color(255, 223, 252, 253));
+	//rect.Width -= 200;
+	//g->FillRectangle(&PlayBrush, rect);
 
 
 
@@ -479,4 +485,15 @@ void Quit(HINSTANCE hInstance, HWND hWnd, NOTIFYICONDATA nid)
 	UnregisterHotKey(hWnd, ID_HOTKEY_HIDEORSHOW);
 	Shell_NotifyIcon(NIM_DELETE, &nid);
 	PostQuitMessage(0);
+}
+
+void _RegisterHotKey(HWND hWnd) 
+{
+	RegisterHotKey(hWnd, ID_HOTKEY_HIDEORSHOW, MOD_ALT | MOD_CONTROL, 'F');
+	RegisterHotKey(hWnd, ID_HOTKEY_CLOSEALARM, MOD_ALT | MOD_CONTROL, 'C');
+
+	RegisterHotKey(hWnd, ID_HOTKEY_LEFT, MOD_ALT | MOD_CONTROL, VK_NUMPAD4);
+	RegisterHotKey(hWnd, ID_HOTKEY_RIGHT, MOD_ALT | MOD_CONTROL, VK_NUMPAD6);
+	RegisterHotKey(hWnd, ID_HOTKEY_UP, MOD_ALT | MOD_CONTROL, VK_NUMPAD8);
+	RegisterHotKey(hWnd, ID_HOTKEY_DOWM, MOD_ALT | MOD_CONTROL, VK_NUMPAD2);
 }

@@ -1,7 +1,7 @@
 #pragma once
 #include <Windows.h>
 
-#define REFRESH_RATE 900
+#define REFRESH_RATE 1
 
 #define AUTOPATH  L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"
 void SetAutoRun();

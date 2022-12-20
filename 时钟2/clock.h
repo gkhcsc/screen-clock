@@ -37,7 +37,7 @@ void CreateTray(HINSTANCE hInstance, HWND hWnd);
 void DeleteTray(NOTIFYICONDATA nid);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK SettingProc(HWND, UINT, WPARAM, LPARAM);
-
+void _RegisterHotKey(HWND hWnd);
 void NoBackGround(const WCHAR* imagePath, const WCHAR* maskPath);
 
 void DrawStr(Gdiplus::Graphics* g, int x, int y, const WCHAR m_Str[]);

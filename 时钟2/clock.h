@@ -17,7 +17,7 @@ using namespace Gdiplus;
 #define ID_HOTKEY_DOWM 6
 #define WINDOW_WIDTH 200
 #define WINDOW_HEIGH 50
-
+#define ID_TIMER 0
 
 
 HWND hWnd_clock, hWnd_desktop, hWnd_time;
@@ -41,3 +41,7 @@ void _RegisterHotKey(HWND hWnd);
 void NoBackGround(const WCHAR* imagePath, const WCHAR* maskPath);
 
 void DrawStr(Gdiplus::Graphics* g, int x, int y, const WCHAR m_Str[]);
+
+
+void KillTimerAndHide(HWND hWnd, int ID_Timer);
+void SetTimerAndShow(HWND hWnd, int ID_Timer);

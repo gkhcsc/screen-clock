@@ -96,7 +96,7 @@ BEGIN
     CHECKBOX        "开启白色背景",IDC_CHECK_BackGround,4,60,56,10
     LTEXT           "快捷键Ctrl+ALT+F 显示或隐藏数字表\n请在删除该程序之前，取消勾选开机自启动选项",IDC_STATIC,10,223,164,17
     LTEXT           "设置单次移动的像素：",IDC_STATIC,5,77,68,8
-    EDITTEXT        IDC_EDIT1,72,77,22,10,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT1,72,77,22,12,ES_AUTOHSCROLL
 END
 
 IDD_DIALOG2 DIALOGEX 0, 0, 192, 97

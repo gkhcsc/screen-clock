@@ -39,7 +39,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	static HBRUSH hBursh_static = (HBRUSH)GetStockObject(WHITE_BRUSH);
-	static BOOL IsHide = FALSE;
 	static HFONT hFont;	
 	static HMENU hMenu;
 	static HINSTANCE hInstance = (HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE);
@@ -59,7 +58,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			hMenu = GetSubMenu(hMenu, 0);
 			hFont = CreateFont(-30, -15, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_CHARACTER_PRECIS, CLIP_DEFAULT_PRECIS, PROOF_QUALITY, FF_MODERN, TEXT("微软雅黑"));
 			
-			SetTimer(hWnd, 0, REFRESH_RATE, NULL);  //当回调函数填NULL时，是将消息发送到默认回调函数，详见下方WM_TIMER
+			SetTimer(hWnd, ID_TIMER, REFRESH_RATE, NULL);  //当回调函数填NULL时，是将消息发送到默认回调函数，详见下方WM_TIMER
 			SendMessage(hWnd_time, WM_SETFONT, (WPARAM)hFont, NULL);
 			CheckMenuItem(hMenu, ID_MENU_40001, MF_CHECKED);
 			return 0;
@@ -74,8 +73,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					{
 						case ID_MENU_40001:   //显示
 						{
-							IsHide = FALSE;
-							PostMessage(hWnd_clock, WM_TIMER, 0, 0);
+							SetTimerAndShow(hWnd, ID_TIMER);
+							PostMessage(hWnd, WM_TIMER, 0, 0);
 							CheckMenuItem(hMenu, ID_MENU_40001, MF_CHECKED);
 							CheckMenuItem(hMenu, ID_MENU_40002, MF_UNCHECKED);
 
@@ -83,8 +82,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 						}
 						case ID_MENU_40002:   //隐藏
 						{
-							IsHide = TRUE;
-							PostMessage(hWnd_clock, WM_TIMER, 0, 0);
+							KillTimerAndHide(hWnd, ID_TIMER);
 							CheckMenuItem(hMenu, ID_MENU_40002, MF_CHECKED);
 							CheckMenuItem(hMenu, ID_MENU_40001, MF_UNCHECKED);
 
@@ -130,8 +128,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			{
 				GetCursorPos(&pt);
 				TrackPopupMenu(hMenu, TPM_LEFTALIGN | TPM_RIGHTBUTTON, pt.x, pt.y, 0, hWnd, NULL);
-				//SetForegroundWindow();
-		
 			}
 			return 0;
 		}
@@ -139,9 +135,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		{
 			if ((HWND)lParam == hWnd_time) 
 			{
-				SetTextColor((HDC)wParam, RGB(RGB_R, RGB_G, RGB_B));
-				SetBkColor((HDC)wParam, RGB(RGB_R, RGB_G, RGB_B));
-				SetBkMode((HDC)wParam, TRANSPARENT);
 				return (INT_PTR)hBursh_static;
 			}
 		}
@@ -151,19 +144,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			{
 				case ID_HOTKEY_HIDEORSHOW: 
 				{
-					if (IsHide == FALSE)  //如果窗口显示，则隐藏 
+					if (IsWindowVisible(hWnd))  //如果窗口显示，则隐藏 
 					{
+						KillTimerAndHide(hWnd, ID_TIMER);
 						PostMessage(hWnd_clock, WM_TIMER, 0, 0);
 						CheckMenuItem(hMenu, ID_MENU_40002, MF_CHECKED);
 						CheckMenuItem(hMenu, ID_MENU_40001, MF_UNCHECKED);
-						IsHide = TRUE;
 					}
 					else
 					{
-						PostMessage(hWnd_clock, WM_TIMER, 0, 0);
+						SetTimerAndShow(hWnd, ID_TIMER);
 						CheckMenuItem(hMenu, ID_MENU_40001, MF_CHECKED);
 						CheckMenuItem(hMenu, ID_MENU_40002, MF_UNCHECKED);
-						IsHide = FALSE;
 					}
 					return 0;
 				}
@@ -225,28 +217,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			POINT p2 = { 0,0 };
 			SIZE size = { WINDOW_WIDTH,WINDOW_HEIGH };
 			
-			if (IsHide == FALSE)
-			{
-				HBITMAP bmp;
-				bmp = CreateCompatibleBitmap(hdc, WINDOW_WIDTH, WINDOW_HEIGH);
-				SelectObject(memDC, bmp);
+			HBITMAP bmp;
+			bmp = CreateCompatibleBitmap(hdc, WINDOW_WIDTH, WINDOW_HEIGH);
+			SelectObject(memDC, bmp);
 
-				Graphics g(memDC);
-				DrawStr(&g, WINDOW_WIDTH, WINDOW_HEIGH, szBuffer);
+			Graphics g(memDC);
+			DrawStr(&g, WINDOW_WIDTH, WINDOW_HEIGH, szBuffer);
+			UpdateLayeredWindow(hWnd_clock, hdc, NULL, &size, memDC, &p2, NULL, &_Blend, ULW_ALPHA);
 
-				UpdateLayeredWindow(hWnd_clock, hdc, NULL, &size, memDC, &p2, NULL, &_Blend, ULW_ALPHA);
-				DeleteObject(bmp);//必须要删除，不然会造成卡顿
-			}
-			else 
-			{
-				HBITMAP bmp;
-				bmp = CreateCompatibleBitmap(hdc, WINDOW_WIDTH, WINDOW_HEIGH);
-				SelectObject(memDC, bmp);
-
-				UpdateLayeredWindow(hWnd_clock, hdc, NULL, &size, memDC, &p2, NULL, &_Blend, ULW_ALPHA);
-				DeleteObject(bmp);//必须要删除，不然会造成卡顿
-			}
 			//必须要删除，不然会造成卡顿
+			DeleteObject(bmp);
 			DeleteDC(memDC);
 			ReleaseDC(hWnd, hdc);
 			return 0;
@@ -282,7 +262,6 @@ void DeleteTray(NOTIFYICONDATA nid)
 
 BOOL CALLBACK SettingProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 {
-	static HBRUSH hBursh_static = (HBRUSH)CreateSolidBrush(RGB(RGB_R2, RGB_G2, RGB_B2));
 	unsigned int a = 0;
 	switch (msg)
 	{
@@ -369,7 +348,7 @@ BOOL CALLBACK SettingProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					{
 						if (IsDlgButtonChecked(hWnd, IDC_CHECK_BackGround) == BST_UNCHECKED)
 						{
-							SetLayeredWindowAttributes(hWnd_clock, RGB(255, 255, 255), 255, LWA_ALPHA);
+							SetLayeredWindowAttributes(hWnd_clock, RGB(255, 255, 255), 255, LWA_ALPHA); //待改 标记
 							SendMessage((HWND)lParam, BM_SETCHECK, 1, 0);
 							return TRUE;
 						}
@@ -392,10 +371,8 @@ BOOL CALLBACK SettingProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		{
 			if ((HWND)lParam == GetDlgItem(hWnd, IDC_STATIC4)) 
 			{
-				
-				SetBkMode((HDC)wParam, TRANSPARENT);
+				HBRUSH hBursh_static = (HBRUSH)CreateSolidBrush(RGB(RGB_R2, RGB_G2, RGB_B2));
 				return (INT_PTR)hBursh_static;
-				
 			}
 			return FALSE;
 		}
@@ -409,7 +386,7 @@ BOOL CALLBACK SettingProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return FALSE;
 }
 
-void NoBackGround(const WCHAR* imagePath, const WCHAR* maskPath)
+void NoBackGround(const WCHAR* imagePath, const WCHAR* maskPath) // 不是时钟2的代码，纯属想留着
 {
 	//在桌面显示图片，使用了模板
 	HDC hdc, hdcDesktop;
@@ -496,4 +473,17 @@ void _RegisterHotKey(HWND hWnd)
 	RegisterHotKey(hWnd, ID_HOTKEY_RIGHT, MOD_ALT | MOD_CONTROL, VK_NUMPAD6);
 	RegisterHotKey(hWnd, ID_HOTKEY_UP, MOD_ALT | MOD_CONTROL, VK_NUMPAD8);
 	RegisterHotKey(hWnd, ID_HOTKEY_DOWM, MOD_ALT | MOD_CONTROL, VK_NUMPAD2);
+}
+
+void KillTimerAndHide(HWND hWnd,int ID_Timer)
+{
+	KillTimer(hWnd, ID_Timer);
+	ShowWindow(hWnd, SW_HIDE);
+}
+
+void SetTimerAndShow(HWND hWnd, int ID_Timer)
+{
+	SetTimer(hWnd, ID_Timer, REFRESH_RATE, NULL);
+	PostMessage(hWnd_clock, WM_TIMER, 0, 0); //发送一次消息使显示出来后不是上一次隐藏时显示的时间
+	ShowWindow(hWnd, SW_SHOW);
 }
